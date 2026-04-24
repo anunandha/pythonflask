@@ -1,34 +1,32 @@
-
 pipeline {
     agent any
+
     environment {
-        DOCKER_IMAGE = "noelzzz/flask-web-app:${BUILD_NUMBER}"
+        DOCKER_IMAGE = "pythonflask:latest"
     }
+
     stages {
-        stage('Checkout Code') {
+
+        stage('git clone') {
             steps {
-                git url: 'https://github.com/noelfrancis12/flaskrep.git', branch: 'main'
+                git branch: 'main', url: 'https://github.com/anunandha/pythonflask.git'
             }
         }
-        stage('Verify Files') {
-            steps {
-                sh 'ls -la'
-            }
-        }
-        stage('Build Docker Image') {
+
+        stage('build docker image') {
             steps {
                 sh "docker build -t ${DOCKER_IMAGE} ."
             }
         }
-        stage('Push Docker Image') {
+
+        stage('run container') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'docker-hub-password', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
-                    sh """
-                    echo "$DOCKER_PASSWORD" | docker login -u $DOCKER_USERNAME --password-stdin
-                    docker push ${DOCKER_IMAGE}
-                    """
-                }
+                sh '''
+                    docker rm -f flask_app || true
+                    docker run -d -p 5000:5000 --name flask_app ${DOCKER_IMAGE}
+                '''
             }
         }
+
     }
 }
